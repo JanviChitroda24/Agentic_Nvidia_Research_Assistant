@@ -1,85 +1,17 @@
 import snowflake.connector
 from dotenv import load_dotenv
-import google.generativeai as genai
 import os
 import re
+import io
 import pandas as pd
 import matplotlib.pyplot as plt
+from backend.llm_response import generate_gemini_response
+from datetime import datetime
+from backend.s3_utils import upload_image_to_s3
 
 # Load environment variables
 dotenv_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../..", ".env"))
 load_dotenv(dotenv_path)
-
-def fetch_snowflake_response(query, year_quarter_dict):
-
-    GOOGLE_API_KEY = os.getenv("GEMINI_API_KEY")
-
-    prompt = f"""
-
-    I have a table in Snowflake that contains financial data for NVidia. This table records information for each day with different columns that represent various financial metrics.
-    
-    **Input Table: NVIDIA_FIN_DATA**  
-    Below is a brief description of each column:
-    - `DATE TIMESTAMP_NTZ`: The timestamp of the financial record, indicating the specific day.
-    - `OPEN FLOAT`: The opening price of the stock on that day.
-    - `DAILYCHANGE FLOAT`: The absolute change in the stock price compared to the previous day.
-    - `MA10 FLOAT`: The 10-day moving average of the stock's price.
-    - `HIGH FLOAT`: The highest stock price recorded on that day.
-    - `CLOSE FLOAT`: The closing price of the stock on that day.
-    - `RSI FLOAT`: The Relative Strength Index, a technical indicator that measures the speed and change of price movements (used for determining overbought/oversold conditions).
-    - `VOLUME NUMBER`: The number of shares traded on that day.
-    - `DAILYCHANGEPERCENT FLOAT`: The percentage change in the stock's price compared to the previous day.
-    - `TICKER TEXT`: The stock symbol or identifier for the stock being traded.
-    - `DOLLARVOLUME FLOAT`: The total dollar volume of stocks traded (calculated as the stock price multiplied by the trading volume).
-    - `LOW FLOAT`: The lowest stock price recorded on that day.
-    - `MA30 FLOAT`: The 30-day moving average of the stock's price.
-    - `VOLATILITY20D FLOAT`: The 20-day volatility of the stock's price, indicating how much the price fluctuates over the past 20 days.
-    - `Year INT`: The year of the financial record.
-    - `Quarter INT`: The quarter of the financial record.
-
-    **Important Notes for Gemini:**
-    - Identify the relevant columns from the provided metadata based on the user's query.
-    - Generate the appropriate SQL query that will fetch the relevant data to answer the user’s query.
-    - Make sure to consider: The specific financial metric(s) being asked (e.g., revenue, net income)
-    - I have already added `Year` and `Quarter` as separate columns in the table.  
-    - The filtering should be done **directly** using these columns, **without** needing to extract them from the `DATE` column.  
-    - The user will provide a dictionary containing `Year` and `Quarter`, which should be used for filtering.  
-    - Your main task is to generate the required SQL queries based on the user’s request and correctly identify the relevant column(s).
-
-    **User Query:**  
-    {query}
-
-    **Time Duration:**  
-    The user will specify the time frame using a dictionary containing `Year` and `Quarter`.  
-    Example: `{year_quarter_dict}`
-
-    **Task for Gemini:**  
-    Based on the user's query, generate **two separate SQL queries**:
-
-    ### **1. Aggregated Query (Summing financial metrics like DOLLARVOLUME)**
-    - This query should aggregate the specified metric (e.g., `SUM(DOLLARVOLUME)`) over the relevant time periods (specific quarters or years).
-    - Use the `Year` and `Quarter` columns for filtering.
-
-    ### **2. Raw Data Query (Without Aggregation)**
-    - This query should retrieve individual record/records (financial metrics that is relevant to the user query, e.g., `(DOLLARVOLUME)`) along with date, year, quater without aggregation.
-    - It should filter based on `Year` and `Quarter`.
-
-    **Format of Response:**
-    1. **Query 1: Aggregated Query**, followed by the SQL code.
-    2. **Query 2: Raw Data Query**, followed by the SQL code.
-    
-    - Ensure proper formatting and structuring of the queries.
-    - The explanation should follow after the SQL code, not between the queries.
-
-"""
-    genai.configure(api_key=GOOGLE_API_KEY)
-    gemini_model = genai.GenerativeModel("gemini-1.5-pro-latest")
-    response = gemini_model.generate_content(prompt)
-    # Call Gemini API (example, your logic here might differ)
-    #print(response.text)
-
-    return response.text.strip()
-
 
 def fetch_snowflake_df(query):
     # Snowflake connection details
@@ -118,32 +50,73 @@ def fetch_snowflake_df(query):
     print(df)
     return df
 
-def create_and_save_graph(df, filename='graph.png'):
-    # Ensure 'Date' column is properly formatted
-    print(type(df['DATE']))
-    df['Date'] = pd.to_datetime(df['DATE'])
-    print("HI")
-    # Set up the plot
+
+def plot_graph(df, column_name, folder_name):
+    print(f"Plotting graphs for column: {column_name}")
+    if column_name not in df.columns:
+        print(f"Column '{column_name}' not found in the DataFrame.")
+        return
+    
+    # Create the plot
     plt.figure(figsize=(10, 6))
-    
-    # Plot all numeric columns except 'Year' and 'Quarter'
-    numeric_columns = [col for col in df.columns if col not in ['DATE', 'Year', 'Quarter']]
-    print(numeric_columns)
-    # Plot each numeric column against 'Date'
-    for column in numeric_columns:
-        print(df['DATE'], df[column])
-        plt.plot(df['DATE'], df[column], label=column)
-    
-    # Add labels, title, and legend
+    plt.plot(df['DATE'], df[column_name], label=column_name, color='blue')
+
+    # Set title and labels
+    plt.title(f'Plot of {column_name} over Time')
     plt.xlabel('Date')
-    plt.ylabel('Values')
-    plt.title('Dynamic Graph')
-    plt.legend()
-    plt.grid()
-    
-    # Save the graph as a PNG file
-    plt.savefig(filename)
-    print(f"Graph saved as {filename}")
+    plt.ylabel(column_name)
+    plt.legend(title=column_name)
+
+    # Rotate x-axis labels for readability
+    plt.xticks(rotation=45)
+
+    # Save the plot as a PNG file
+    plt.tight_layout()  # Adjust layout to avoid clipping
+    plt.savefig(f'{column_name}_plot.png', format='png')
+
+    # Save the plot to a BytesIO object
+    image_buffer = io.BytesIO()
+    plt.tight_layout()
+    plt.savefig(image_buffer, format='png')  # Save as PNG
+    image_buffer.seek(0)  # Reset buffer position
+
+    # Generate image
+    image_name = f"{column_name}_plot.png"
+
+    # Upload the image to S3
+    uploaded_url = upload_image_to_s3(
+        image_content=image_buffer.getvalue(),  # Get binary content
+        filename=image_name,
+        folder=f"plots/{folder_name}",  # Optional folder name
+        content_type="image/png"
+    )
+
+    print(f"Uploaded Image URL: {uploaded_url}")
+
+def snowflake_agent_call(year_quarter_dict, query):
+    llm_query_response = generate_gemini_response("snowflake-agent",query,year_quarter_dict)
+    print(llm_query_response)
+
+    match = re.findall(r"(SELECT[\s\S]*?);", llm_query_response)
+
+    # Store the queries in variables
+    raw_query = match[0] if len(match) >= 1 else None
+
+    print("\nRaw Data Query:")
+    print(raw_query)
+
+    #fetch_snowflake_df(agg_query)
+    df = fetch_snowflake_df(raw_query)
+
+    # Dynamically get columns other than 'DATE'
+    columns_to_plot = [col for col in df.columns if col not in ['DATE', "Year", "Quarter"]]
+    print(columns_to_plot)
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    folder_name = f"{timestamp}_visuals"
+
+    for col in columns_to_plot:
+        plot_graph(df, col, folder_name)
 
 
 year_quarter_dict = {
@@ -151,24 +124,13 @@ year_quarter_dict = {
     "2023": ["2", "4"]
 }
 
-query = "What is the MA10 value for a specific stock (TICKER) on a given date?"
+query = "What is the opening price and closing price?"
+queries = """
+What is the opening price and closing price?
+What is the 10-day moving average and 30-day moving average?
+What is the daily change and daily change percentage?
+What is the highest and lowest stock price recorded?
 
-input_string = fetch_snowflake_response(query,year_quarter_dict)
-print(input_string)
+"""
 
-queries = re.findall(r"(SELECT[\s\S]*?);", input_string)
-
-# Store the queries in variables
-agg_query = queries[0] if len(queries) > 0 else None
-raw_query = queries[1] if len(queries) > 1 else None
-
-# Print the extracted queries
-print("Aggregated Query:")
-print(agg_query)
-
-print("\nRaw Data Query:")
-print(raw_query)
-
-#fetch_snowflake_df(agg_query)
-dataframe = fetch_snowflake_df(raw_query)
-create_and_save_graph(dataframe)
+snowflake_agent_call(year_quarter_dict, query)

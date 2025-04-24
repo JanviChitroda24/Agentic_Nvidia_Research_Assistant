@@ -40,6 +40,34 @@ def upload_file_to_s3(file_content, filname, folder=None):
     except Exception as e:
         print(f"Error uploading binary content: {e}")
         return False
+
+def upload_image_to_s3(image_content, filename, folder=None, content_type="image/jpeg"):
+    """
+    Uploads an image to S3.
+
+    :param image_content: Binary content of the image.
+    :param filename: Name of the file in S3.
+    :param folder: Optional folder name in the S3 bucket (default is None).
+    :param content_type: MIME type of the image (e.g., "image/png", "image/jpeg").
+    :return: URL of the uploaded image if successful, otherwise False.
+    """
+    try:
+        # Construct the S3 key (path)
+        s3_key = f"{folder}/{filename}" if folder else filename
+
+        # Upload the image with the correct ContentType
+        s3_client.put_object(
+            Bucket=bucket_name,
+            Key=s3_key,
+            Body=image_content,
+            ContentType=content_type
+        )
+
+        print(f"{filename} uploaded successfully to {bucket_name}/{s3_key}")
+        return f"https://{bucket_name}.s3.{aws_region}.amazonaws.com/{s3_key}"
+    except Exception as e:
+        print(f"Error uploading image: {e}")
+        return False
     
 # def upload_pdf_to_s3(file_content: bytes, original_filename: str, document_id: str) -> str:
 #     """
