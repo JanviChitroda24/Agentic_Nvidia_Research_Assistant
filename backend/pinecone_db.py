@@ -118,7 +118,7 @@ class AgenticResearchAssistant:
             for i, (chunk, embedding) in enumerate(zip(chunks, embeddings)):
                 metadata = {
                     "text": chunk["content"],
-                    "header": chunk.get("header", "No Header"),
+                    "header": chunk.get("merged_headers", "No Header"),
                     "level": str(chunk.get("level", "Unknown")),
                     "part": str(chunk.get("part")) if chunk.get("part") is not None else "None",
                     "year": year,

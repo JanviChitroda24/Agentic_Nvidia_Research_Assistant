@@ -1,21 +1,15 @@
 import re
 import json
 
-def chunk_markdown_by_headers(markdown_text, ideal_word_count=500):
+def chunk_markdown_by_headers(markdown_text, ideal_word_count=500, min_content_chars=200):
     """
-    Splits the markdown content into chunks based on headers.
-    If a chunk's word count is greater than 1.5 * ideal_word_count,
-    splits that chunk into two parts with the same header.
-    
-    Each chunk is represented as a dictionary containing:
-        - 'header': The header line (if available)
-        - 'level': The header level (number of '#' characters)
-        - 'content': The text content for that chunk
-        - 'part' (optional): For split chunks, indicates part 1 or 2.
+    Splits the markdown content into chunks based on headers and content size.
+    Merges headers with small content until sufficient content is accumulated.
     
     Parameters:
         markdown_text (str): The full markdown text to be chunked.
         ideal_word_count (int): Ideal word count for a chunk (default is 500).
+        min_content_chars (int): Minimum content size between headers (default is 200).
     
     Returns:
         List[Dict]: A list of chunk dictionaries with header metadata.
@@ -28,66 +22,123 @@ def chunk_markdown_by_headers(markdown_text, ideal_word_count=500):
     
     # Find all header matches with their start positions.
     matches = list(header_pattern.finditer(markdown_text))
-    chunks = []
     
     # If no header is found, treat the entire text as one chunk.
     if not matches:
-        chunks.append({
+        return [{
             'header': None,
             'level': None,
             'content': markdown_text.strip()
-        })
-        return chunks
+        }]
     
-    # Iterate through headers and split text between them.
+    # Create segments with headers and their content
+    segments = []
     for idx, match in enumerate(matches):
-        header_line = match.group(0).strip()  # full header line
-        header_level = len(match.group(1))      # number of '#' determines level
         start_index = match.start()
         end_index = matches[idx + 1].start() if idx + 1 < len(matches) else len(markdown_text)
-        chunk_text = markdown_text[start_index:end_index].strip()
+        header_line = match.group(0).strip()
+        header_level = len(match.group(1))
+        content = markdown_text[start_index:end_index].strip()
         
-        # Split the chunk into words to check length.
-        words = chunk_text.split()
+        # Calculate the actual content size (excluding the header)
+        content_without_header = content[len(header_line):].strip()
+        content_length = len(content_without_header)
+        
+        segments.append({
+            'header': header_line,
+            'level': header_level,
+            'content': content,
+            'content_without_header': content_without_header,
+            'content_length': content_length,
+        })
+    
+    # Improved merging logic - keep merging until we have enough content
+    final_chunks = []
+    current_merged_chunk = None
+    current_merged_headers = []
+    current_merged_content = ""
+    current_content_length = 0
+    
+    for segment in segments:
+        # If we don't have a current chunk or the current segment has small content
+        if current_merged_chunk is None:
+            # Start a new merged chunk
+            current_merged_chunk = {
+                'header': segment['header'],
+                'level': segment['level'],
+            }
+            current_merged_headers = [segment['header']]
+            current_merged_content = segment['content']
+            current_content_length = segment['content_length']
+        else:
+            # Always merge if the content is too small
+            if segment['content_length'] < min_content_chars or current_content_length < min_content_chars:
+                # Add to the current merged chunk
+                current_merged_headers.append(segment['header'])
+                current_merged_content += "\n\n" + segment['content']
+                current_content_length += segment['content_length']
+            else:
+                # We have enough content in the current chunk, so finalize it
+                current_merged_chunk['content'] = current_merged_content
+                current_merged_chunk['merged_headers'] = current_merged_headers
+                final_chunks.append(current_merged_chunk)
+                
+                # Start a new chunk with this segment
+                current_merged_chunk = {
+                    'header': segment['header'],
+                    'level': segment['level'],
+                }
+                current_merged_headers = [segment['header']]
+                current_merged_content = segment['content']
+                current_content_length = segment['content_length']
+    
+    # Add the last chunk if there's any
+    if current_merged_chunk is not None:
+        current_merged_chunk['content'] = current_merged_content
+        current_merged_chunk['merged_headers'] = current_merged_headers
+        final_chunks.append(current_merged_chunk)
+    
+    # Check if any chunks are too large and need splitting
+    result_chunks = []
+    for chunk in final_chunks:
+        words = chunk['content'].split()
         if len(words) > split_threshold:
-            # Split into two parts (roughly equal halves).
+            # Split into two parts (roughly equal halves)
             mid_point = len(words) // 2
             part1_text = " ".join(words[:mid_point])
             part2_text = " ".join(words[mid_point:])
             
-            chunks.append({
-                'header': header_line,
-                'level': header_level,
+            # Keep the same header information for both parts
+            result_chunks.append({
+                'header': chunk['header'],
+                'level': chunk['level'],
                 'content': part1_text,
+                'merged_headers': chunk['merged_headers'],
                 'part': 1
             })
-            chunks.append({
-                'header': header_line,
-                'level': header_level,
+            result_chunks.append({
+                'header': chunk['header'],
+                'level': chunk['level'],
                 'content': part2_text,
+                'merged_headers': chunk['merged_headers'],
                 'part': 2
             })
         else:
-            chunks.append({
-                'header': header_line,
-                'level': header_level,
-                'content': chunk_text
-            })
+            result_chunks.append(chunk)
     
-    return chunks
+    return result_chunks
 
-# # --- Main Section ---
+# --- Main Section ---
 # if __name__ == "__main__":
-#     file_path = "/Users/janvichitroda/Documents/Janvi/NEU/Big_Data_Intelligence_Analytics/Assignment 5/Part 1/Github_Repo/Agentic_Research_Assistant/input/2022_Fourth_Quarter.md"
+#     file_path = "/Users/janvichitroda/Documents/Janvi/NEU/Big_Data_Intelligence_Analytics/Assignment 5/Part 1/Janvi_Personal/2020_First_Quarter.md"
     
-#     # Read the file content
 #     with open(file_path, "r", encoding="utf-8") as f:
 #         sample_markdown = f.read()
     
-#     # Get chunks from the markdown content
-#     chunks = chunk_markdown_by_headers(sample_markdown)
+#     # Get chunks from the markdown content with more aggressive merging for small content sections
+#     chunks = chunk_markdown_by_headers(sample_markdown, min_content_chars=200)
 
-#     output_file = "/Users/janvichitroda/Documents/Janvi/NEU/Big_Data_Intelligence_Analytics/Assignment 5/Part 1/Github_Repo/Agentic_Research_Assistant/input/output_chunks.json"
+#     output_file = "/Users/janvichitroda/Documents/Janvi/NEU/Big_Data_Intelligence_Analytics/Assignment 5/Part 1/Janvi_Personal/2020_First_Quarter.json"
 
 #     # Write the chunks list to the JSON file
 #     with open(output_file, "w", encoding="utf-8") as f:
