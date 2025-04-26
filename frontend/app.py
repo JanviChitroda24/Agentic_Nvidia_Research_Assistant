@@ -1,6 +1,7 @@
 import streamlit as st
 import os
 import requests
+import json
 
 # Constants
 FASTAPI_URL = "http://127.0.0.1:8000/"  # FastAPI base URL
@@ -221,6 +222,44 @@ def display_main_content(user_selection):
                         
                 except requests.exceptions.RequestException as e:
                     st.error(f"An error occurred while fetching news: {e}")
+            elif action == "Complete report":
+                url = f"{FASTAPI_URL}/generate_report/"
+                
+                # Send GET request to the FastAPI endpoint
+                try:
+                    response = requests.post(url, json=request_data)
+                    response.raise_for_status()  # Raise an exception for bad responses
+
+                    # If the request is successful, extract the summary and markdown content
+                    data = response.json()
+                    pinecone_result = data.get("pinecone_result", "")
+                    snowflake_result = data.get("snowflake_result", "")
+                    news_result = data.get("news_result", {})
+
+                    # Extract summary and markdown from news_result if it exists
+                    news_summary = news_result.get("summary", "")
+                    news_markdown = news_result.get("markdown", "")
+                    top_financial_news = news_markdown.split("LATEST NVIDIA GENERAL NEWS")[0]
+                    st.markdown("## NVIDIA REPORT")
+                    st.markdown("### NVIDIA Report Summary")
+                    st.write(pinecone_result)
+                    st.markdown("### NVIDIA Visual Summary")
+                    if snowflake_result:
+                        for url in snowflake_result:
+                            st.image(url, caption="Generated Plot", use_container_width=True)
+                    else:
+                        st.warning("No images found.")
+                    st.markdown("### NVIDIA News Summary and Top Financial News")
+                    if news_summary:
+                        st.markdown("### News Summary")
+                        st.write(news_summary)  # Display the summary
+                    if top_financial_news:
+                        st.markdown("### Top 5 Financial News")
+                        st.write(top_financial_news)
+
+                except requests.exceptions.RequestException as e:
+                    st.error(f"An error occurred while fetching news: {e}")
+
 
                 
         

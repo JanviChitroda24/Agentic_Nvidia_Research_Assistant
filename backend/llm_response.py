@@ -108,8 +108,8 @@ def generate_gemini_response(agent,user_query, context):
 
 
             Answer Format:
-            - Year: year_number, Quarter: year_number
-            Answer: [response for this quarter]
+            #### Year: year_number, Quarter: year_number
+            [response for this quarter]
 
             Continue with the next quarters as necessary, providing separate answers for each.
 

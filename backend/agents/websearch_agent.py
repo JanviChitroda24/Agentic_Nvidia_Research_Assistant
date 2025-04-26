@@ -175,7 +175,7 @@ class NewsRetriever:
             print("Error parsing response: %s", e)
             return []
 
-def news_agent(financial_query: str) -> str:
+def news_agent(financial_query: str):
     """Main function to run the news retrieval and return results in markdown format."""
     news_retriever = NewsRetriever()
     final_query = f"News on NVIDIA: {financial_query}"
