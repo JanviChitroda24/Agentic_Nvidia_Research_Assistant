@@ -1,4 +1,5 @@
 from backend.pinecone_db import AgenticResearchAssistant  # adjust import as needed
+from backend.llm_response import generate_gemini_response
 import logging
 
 def search_pinecone_db(self, query, year_quarter_dict):
@@ -36,7 +37,8 @@ def search_pinecone_db(self, query, year_quarter_dict):
                 filter=filter_criteria
             )
             combined_matches.extend(results.get("matches", []))
-            #print(combined_matches)
+            # print(combined_matches)
+            print(len(combined_matches))
 
         if not combined_matches:
             logging.warning("No relevant matches found for the given quarters.")
@@ -50,17 +52,9 @@ def search_pinecone_db(self, query, year_quarter_dict):
 
         # Create context
         context = "\n".join([f"Year: {year}, Quarter: {quarter} - {text}" for text, year, quarter in retrieved_data])
-        print(context)
-        prompt = f"""You are an AI assistant tasked with analyzing Nvidia's financial data. 
-            Below is relevant financial information retrieved from a vector database, with each entry associated with a specific year and quarter. 
-            Use this context to answer the question accurately.
-            Question: {query}
-            Context: {context}
-        """
+        response = generate_gemini_response("pinecone-agent",query, context)
 
-        # # Generate Gemini response
-        # response = self.gemini_model.generate_content(prompt)
-        # return response.text
+        return response
 
     except Exception as e:
         logging.error(f"Error during search: {e}")
@@ -68,22 +62,22 @@ def search_pinecone_db(self, query, year_quarter_dict):
 
 
 
-# Step 1: Instantiate the class
-assistant = AgenticResearchAssistant()
+# # Step 1: Instantiate the class
+# assistant = AgenticResearchAssistant()
 
-# Step 2: Define your query
-query = "What were Nvidia's major financial highlights"
+# # Step 2: Define your query
+# query = "What were Nvidia's major financial highlights"
 
-# Step 3: Define year_quarter_dict
-# This is a dictionary where the key is the year and the value is a list of quarters you want to filter on.
-year_quarter_dict = {
-    "2023": ["1"],  # This means Q1 of 2023
-    "2022": ["4"]   # You can include more if needed
-}
+# # Step 3: Define year_quarter_dict
+# # This is a dictionary where the key is the year and the value is a list of quarters you want to filter on.
+# year_quarter_dict = {
+#     "2023": ["1"],  # This means Q1 of 2023
+#     "2022": ["4"]   # You can include more if needed
+# }
 
-# Step 4: Call the search function
-response = search_pinecone_db(assistant, query, year_quarter_dict)
+# # Step 4: Call the search function
+# response = search_pinecone_db(assistant, query, year_quarter_dict)
 
-# Step 5: Print the AI's response
-print("Gemini's Response:")
-print(response)
+# # Step 5: Print the AI's response
+# print("Gemini's Response:")
+# print(response)

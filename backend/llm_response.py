@@ -4,7 +4,7 @@ import google.generativeai as genai
 
 # Load environment variables
 
-def generate_gemini_response(agent,user_query, year_quarter_dict):
+def generate_gemini_response(agent,user_query, context):
     dotenv_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".env"))
     load_dotenv(dotenv_path)
 
@@ -53,7 +53,7 @@ def generate_gemini_response(agent,user_query, year_quarter_dict):
 
             **Time Duration:**  
             The user will specify the time frame using a dictionary containing `Year` and `Quarter`.  
-            Example: `{year_quarter_dict}`
+            Example: `{context}`
 
             **Task for Gemini:**  
             Based on the user's query, generate **two separate SQL queries**:
@@ -85,5 +85,35 @@ def generate_gemini_response(agent,user_query, year_quarter_dict):
 
         """
 
-        response = gemini_model.generate_content(prompt)
-        return response.text.strip()
+    elif agent == "pinecone-agent":
+        prompt = f"""
+            You are an AI assistant tasked with analyzing Nvidia's financial data. 
+            Below is relevant financial information retrieved from a vector database, with each entry associated with a specific year and quarter. 
+            Use this context to answer the question accurately, ensuring that you provide separate answers for each quarter based on the available data.
+
+            Question: {user_query}
+
+            Context:
+            {context}
+
+            Instructions:
+            - For each year and quarter, analyze the data and provide a **detailed response**.
+            - Each answer should be well-structured with a **heading** and **content**:
+            - Start with a **heading** that includes the **year and quarter** (e.g., "Year: 2023, Quarter: 1").
+            - Provide a **detailed, descriptive analysis** of the financial data for that specific quarter.
+            - Focus on key financial highlights, trends, and performance metrics (e.g., revenue growth, profit margins, segment performance, etc.).
+            - Each response should be **approximately 500 words**, covering the most important details of the quarter.
+            - Ensure that your answer is comprehensive, providing insights into both positive and negative trends as well as any significant changes.
+            - Provide **clear and structured insights** for each quarter individually, and avoid combining data from multiple quarters.
+
+
+            Answer Format:
+            - Year: year_number, Quarter: year_number
+            Answer: [response for this quarter]
+
+            Continue with the next quarters as necessary, providing separate answers for each.
+
+        """
+        
+    response = gemini_model.generate_content(prompt)
+    return response.text.strip()

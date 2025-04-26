@@ -124,14 +124,15 @@ def display_main_content(user_selection):
                 st.write(f"{year}: {quarters_dict.get(year, [])}")
             print("Years ",years)
             print(action)
-            if action == "Summarize":
-                # Prepare request payload
-                request_data = {
+
+            # Prepare request payload
+            request_data = {
                     "query": prompt,
                     "year_quarter_dict": {str(year): quarters_dict[year] for year in years}
                 }
-                print(request_data)
+            print(request_data)
 
+            if action == "Summarize":
                 # Send request to FastAPI
                 try:
                     response = requests.post(f"{FASTAPI_URL}summarize_using_pinecone", json=request_data)
@@ -143,6 +144,25 @@ def display_main_content(user_selection):
                         st.error(f"❌ Error: {response.status_code} - {response.text}")
                 except requests.exceptions.RequestException as e:
                     st.error(f"❌ Failed to connect to API: {e}")
+
+            elif action == "Data-driven visuals":
+                try:
+                    # Send request to FastAPI's /fetch_images endpoint
+                    response = requests.post(f"{FASTAPI_URL}fetch_images", json=request_data)
+                    print(response)
+                    # Extract the image URLs from the response
+                    image_urls = response.json().get("image_urls", [])
+                    
+                    # If image URLs are received, display them in Streamlit
+                    if image_urls:
+                        for url in image_urls:
+                            st.image(url, caption="Generated Plot", use_container_width=True)
+                    else:
+                        st.warning("No images found.")
+                
+                except requests.exceptions.RequestException as e:
+                    st.error(f"❌ Failed to connect to API: {e}")
+                
         
     
 def main():

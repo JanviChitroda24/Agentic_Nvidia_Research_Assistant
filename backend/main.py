@@ -7,6 +7,9 @@ import json
 import time
 from typing import Dict, List
 from backend.pinecone_db import AgenticResearchAssistant
+from backend.agents.pinecone_agent import search_pinecone_db
+from backend.agents.snowflake_agent import snowflake_agent_call
+from fastapi.responses import JSONResponse
 
 
 # # Import existing modules
@@ -145,5 +148,18 @@ async def get_available_quarters():
 @app.post("/summarize_using_pinecone")
 def search(request: SearchRequest):
     assistant = AgenticResearchAssistant()
-    response = assistant.search_pinecone_db(request.query, request.year_quarter_dict)
+    response = search_pinecone_db(assistant, request.query, request.year_quarter_dict)
     return {"response": response}    
+
+
+@app.post("/fetch_images")
+async def fetch_images(request: SearchRequest):
+    try:
+        # Call your snowflake_agent_call function to fetch image URLs
+        image_urls = snowflake_agent_call(request.year_quarter_dict, request.query)
+    
+        # Return the list of image URLs as a JSON response
+        return JSONResponse(content={"image_urls": image_urls})
+    
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})

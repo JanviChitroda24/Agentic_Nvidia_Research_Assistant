@@ -136,3 +136,43 @@ def upload_to_s3(key, content):
     """Upload the Markdown file to S3."""
     s3_client.put_object(Bucket=bucket_name, Key=key, Body=content, ContentType="text/markdown")
     print(f"Markdown file uploaded successfully to s3://{bucket_name}/{key}")
+
+
+def fetch_images_from_s3_folder(folder_name):
+    """
+    Fetches all image URLs from a specific folder in the S3 bucket.
+
+    :param folder_name: The folder path in the S3 bucket (e.g., "plots/").
+    :return: A list of pre-signed URLs for image files within the specified folder.
+    """
+    try:
+        # Ensure the folder_name ends with a slash (S3 treats folders as prefixes)
+        if not folder_name.endswith('/'):
+            folder_name += '/'
+
+        # List objects with the specified prefix (folder_name)
+        response = s3_client.list_objects_v2(Bucket=bucket_name, Prefix=folder_name)
+
+        # Check if 'Contents' exists in the response (it won't if no files are found)
+        if 'Contents' not in response:
+            print(f"No files found in folder: {folder_name}")
+            return []
+
+        # Construct the list of image files (based on file extensions)
+        s3_image_urls = []
+        for obj in response['Contents']:
+            key = obj['Key']  # The file key (e.g., "plots/my_image.png")
+            
+            # Filter image files based on common image extensions
+            if key.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp')):
+                # Get presigned URL for each image file (not the full URL)
+                presigned_url = get_presigned_url(key)  # Pass only the key
+                if presigned_url:
+                    s3_image_urls.append(presigned_url)
+
+        print(f"Found {len(s3_image_urls)} images in folder: {folder_name}")
+        return s3_image_urls
+
+    except Exception as e:
+        print(f"Error fetching images: {e}")
+        return []

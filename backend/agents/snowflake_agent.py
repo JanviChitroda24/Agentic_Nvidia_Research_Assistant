@@ -7,7 +7,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from backend.llm_response import generate_gemini_response
 from datetime import datetime
-from backend.s3_utils import upload_image_to_s3
+from backend.s3_utils import upload_image_to_s3, fetch_images_from_s3_folder
 
 # Load environment variables
 dotenv_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../..", ".env"))
@@ -109,7 +109,7 @@ def snowflake_agent_call(year_quarter_dict, query):
     df = fetch_snowflake_df(raw_query)
 
     # Dynamically get columns other than 'DATE'
-    columns_to_plot = [col for col in df.columns if col not in ['DATE', "Year", "Quarter"]]
+    columns_to_plot = [col for col in df.columns if col.upper() not in ['DATE', "YEAR", "QUARTER"]]
     print(columns_to_plot)
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -118,13 +118,17 @@ def snowflake_agent_call(year_quarter_dict, query):
     for col in columns_to_plot:
         plot_graph(df, col, folder_name)
 
+    image_urls = fetch_images_from_s3_folder(f"plots/{folder_name}")
+    print(image_urls)
+    return image_urls
+
 
 year_quarter_dict = {
-    "2024": ["1", "2", "3"],
-    "2023": ["2", "4"]
+    "2024": ["1", "2"],
+    "2023": ["2"]
 }
 
-query = "What is the opening price and closing price?"
+query = "What is the 10-day moving average and 30-day moving average?"
 queries = """
 What is the opening price and closing price?
 What is the 10-day moving average and 30-day moving average?
