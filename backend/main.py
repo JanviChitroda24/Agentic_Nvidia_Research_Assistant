@@ -9,6 +9,7 @@ from typing import Dict, List
 from backend.pinecone_db import AgenticResearchAssistant
 from backend.agents.pinecone_agent import search_pinecone_db
 from backend.agents.snowflake_agent import snowflake_agent_call
+from backend.agents.websearch_agent import news_agent
 from fastapi.responses import JSONResponse
 
 
@@ -163,3 +164,22 @@ async def fetch_images(request: SearchRequest):
     
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
+
+@app.post("/fetch-news-markdown/")
+async def fetch_news_markdown(request: SearchRequest):
+    """
+    Fetch news articles based on the given query and return results in markdown format.
+    
+    Args:
+    - query (str): Search query to retrieve news.
+    - num_results (int): Number of news articles to return (default 5).
+    
+    Returns:
+    - dict: A dictionary containing the articles in markdown format.
+    """
+    # Call the news_agent function with the query
+    output_dict = news_agent(request.query)
+
+    
+    # Return the markdown content in the response
+    return {"markdown": output_dict["markdown"], "summary": output_dict["summary"]}

@@ -114,6 +114,38 @@ def generate_gemini_response(agent,user_query, context):
             Continue with the next quarters as necessary, providing separate answers for each.
 
         """
-        
+
+    if agent == "web-analysis":
+            prompt = f"""
+            You are a financial analyst specializing in NVIDIA and the tech industry.
+            Analyze the following recent news and trends about NVIDIA to provide strategic insights.
+
+            {context}
+
+            Please provide a structured analysis with the following sections:
+
+            1. KEY DEVELOPMENTS:
+            - List the most significant recent events or announcements
+            - Highlight their importance in the industry context
+
+            2. MARKET IMPACT:
+            - Analyze potential effects on NVIDIA's market position
+            - Discuss competitive implications
+            - Identify any market opportunities or challenges
+
+            3. INDUSTRY TRENDS:
+            - Identify broader patterns in the semiconductor/AI industry
+            - Connect these trends to NVIDIA's strategy
+            - Note any emerging market dynamics
+
+            4. FUTURE OUTLOOK:
+            - Provide forward-looking analysis
+            - Highlight potential opportunities and risks
+            - Suggest areas to watch
+
+            Format your response in clear sections with bullet points for easy reading.
+            Focus on factual analysis based on the provided information.
+            """
+
     response = gemini_model.generate_content(prompt)
     return response.text.strip()

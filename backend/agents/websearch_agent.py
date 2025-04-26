@@ -3,6 +3,7 @@ import os
 from dotenv import load_dotenv
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional, Any
+from backend.llm_response import generate_gemini_response
 
 class NewsRetriever:
     def __init__(self):
@@ -85,28 +86,33 @@ class NewsRetriever:
             
         return sorted(articles, key=get_article_date, reverse=True)
     
+    def article_to_markdown(self, article):
+        """Convert article data to markdown format."""
+        title = article.get('title', 'N/A')
+        source = article.get('source', 'N/A')
+        link = article.get('link', 'N/A')
+        date = article.get('date', 'N/A')
+        snippet = article.get('snippet', 'No content available')
+
+        # Generate markdown formatted string for the article
+        markdown = f"##### {title}\n\n"
+        markdown += f"**Content**:\n{snippet}\n\n"
+        markdown += f"**Source**: {source} \t\t\t **Published**: {date}\n\n"
+        markdown += f"**Link**: [{link}]({link})\n\n"
+        markdown += "-" * 80 + "\n"
+        
+        return markdown
+    
     def display_articles(self, articles: List[Dict[str, Any]]) -> None:
-        """Display the articles in a formatted way."""
+        """Return the articles in markdown format."""
         if not articles:
-            print("No relevant news articles found.")
-            return
-            
-        for i, article in enumerate(articles, 1):
-            title = article.get('title', 'N/A')
-            source = article.get('source', 'N/A')
-            link = article.get('link', 'N/A')
-            date = article.get('date', 'N/A')
-            snippet = article.get('snippet', 'No content available')
-            
-            # Only print the article if it has a source, link, and some content
-            if source != 'N/A' and link != 'N/A' and snippet != 'No content available':
-                print(f"Article {i}:")
-                print(f"Title: {title}")
-                print(f"Source: {source}")
-                print(f"Link: {link}")
-                print(f"Published: {date}")
-                print(f"Content: {snippet}")
-                print("-" * 80)
+            return "No relevant news articles found.\n"
+        
+        markdown_content = ""
+        for article in articles:
+            markdown_content += self.article_to_markdown(article)
+        
+        return markdown_content
     
     def fetch_news(
         self, 
@@ -160,7 +166,7 @@ class NewsRetriever:
                 return articles[:5]
                 
             # Return the requested number of articles
-            return articles[:10]
+            return articles[:5]
             
         except requests.exceptions.RequestException as e:
             print("Error fetching news: %s", e)
@@ -169,22 +175,45 @@ class NewsRetriever:
             print("Error parsing response: %s", e)
             return []
 
-def news_agent(financial_query):
-    """Main function to run the news retrieval."""
+def news_agent(financial_query: str) -> str:
+    """Main function to run the news retrieval and return results in markdown format."""
     news_retriever = NewsRetriever()
-    
+    final_query = f"News on NVIDIA: {financial_query}"
+    print(final_query)
     # Get top 5 financial news for NVIDIA
-    print("=== TOP 5 NVIDIA FINANCIAL NEWS BASED ON QUERY ===")
-    financial_articles = news_retriever.fetch_news(financial_query, 30)
-    news_retriever.display_articles(financial_articles)
-    
-    # Get latest NVIDIA news from trusted sources
-    print("\n=== LATEST NVIDIA GENERAL NEWS ===")
-    general_query = "NVIDIA"
-    general_articles = news_retriever.fetch_news(general_query, 25)
-    news_retriever.display_articles(general_articles)
+    financial_articles = news_retriever.fetch_news(final_query, 30)
+    print(financial_articles)
+    # financial_news_markdown = "## TOP 5 NVIDIA FINANCIAL NEWS BASED ON QUERY \n\n"
+    financial_news_markdown = news_retriever.display_articles(financial_articles)
 
+    # Get latest NVIDIA news from trusted sources
+    general_query = "NVIDIA"
+    general_articles = news_retriever.fetch_news(general_query, 18)
+    general_news_markdown = "## LATEST NVIDIA GENERAL NEWS \n\n"
+    general_news_markdown += news_retriever.display_articles(general_articles)
+
+    # Combine the financial and general news markdown
+    full_markdown = financial_news_markdown + general_news_markdown
+
+    # Generate a summary using Gemini
+    llm_response = generate_gemini_response("web-analysis", "Nvidia", full_markdown)
+
+    # Return the markdown and summary
+    return {"markdown": full_markdown, "summary": llm_response}
 
 if __name__ == "__main__":
-    financial_query = "Nvidia financial highlights quarterly results"
-    news_agent(financial_query)
+    financial_query = "financial highlights quarterly results"
+    
+    # Call the news_agent and print the result
+    markdown_result = news_agent(financial_query)
+    print(markdown_result)  # This will print the markdown output
+
+"""
+{
+  "query": "financial highlights quarterly results",
+  "year_quarter_dict": {
+    "2023": ["1"],
+    "2022": ["4"]
+  }
+}
+"""

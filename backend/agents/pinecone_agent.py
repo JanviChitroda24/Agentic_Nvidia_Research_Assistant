@@ -70,11 +70,12 @@ def search_pinecone_db(self, query, year_quarter_dict):
 
 # # Step 3: Define year_quarter_dict
 # # This is a dictionary where the key is the year and the value is a list of quarters you want to filter on.
-# year_quarter_dict = {
-#     "2023": ["1"],  # This means Q1 of 2023
-#     "2022": ["4"]   # You can include more if needed
-# }
-
+"""
+year_quarter_dict = {
+    "2023": ["1"],  # This means Q1 of 2023
+    "2022": ["4"]   # You can include more if needed
+}
+"""
 # # Step 4: Call the search function
 # response = search_pinecone_db(assistant, query, year_quarter_dict)
 

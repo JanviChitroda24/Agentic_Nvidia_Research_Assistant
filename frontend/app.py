@@ -92,14 +92,15 @@ def display_main_content(user_selection):
 
         # Left column (LHS) for Action
         with col1:
-            st.markdown(f"##### Action: {action}")
+            st.markdown(f"##### Reaseach Approach")
+            st.success(f"###### {action}")
 
         # Right column (RHS) for Year and Quarter
         with col2:
             st.write("##### Year and Quarter:")
             for year in years:
                 quarters = ', '.join(quarters_dict.get(year, []))
-                st.write(f"###### Year: {year} | Quarter: {quarters}")
+                st.success(f"###### Year: {year} | Quarter: {quarters}")
 
     # Create a text box (text area) for user input
     prompt = st.text_area("#####", height=150, placeholder="Example: Analyze sales trend for given duaration")  # height sets initial size
@@ -117,11 +118,6 @@ def display_main_content(user_selection):
         elif not prompt:
             st.write("##### ⚠️ Please enter a prompt before submitting.")
         else:
-            st.write(f"###### Prompt entered: {prompt}")
-            st.write("###### Year and Quarter Information:")
-            # Display year and quarter information after submission
-            for year in years:
-                st.write(f"{year}: {quarters_dict.get(year, [])}")
             print("Years ",years)
             print(action)
 
@@ -162,6 +158,70 @@ def display_main_content(user_selection):
                 
                 except requests.exceptions.RequestException as e:
                     st.error(f"❌ Failed to connect to API: {e}")
+
+            elif action == "Real-time insights":
+                # Construct the full URL to call the FastAPI endpoint
+                url = f"{FASTAPI_URL}/fetch-news-markdown/"
+                
+                # Send GET request to the FastAPI endpoint
+                try:
+                    response = requests.post(url, json=request_data)
+                    response.raise_for_status()  # Raise an exception for bad responses
+
+                    # If the request is successful, extract the summary and markdown content
+                    data = response.json()
+                    summary = data.get("summary", "")
+                    markdown_content = data.get("markdown", "")
+                    
+                    if summary:
+                        st.subheader("Summary")
+                        st.write(summary)  # Display the summary
+
+                    if markdown_content:
+                        # Split the markdown content into two columns
+                        column1, column2 = st.columns(2)
+
+                        # Column 1 (Financial News)
+                        with column1:
+                            st.markdown("### NVIDIA NEWS BASED ON YOUR QUERY")
+                            top_financial_news = markdown_content.split("LATEST NVIDIA GENERAL NEWS")[0]
+                            #st.markdown(top_financial_news)
+                            # Split the content based on the delimiter "--------------------------------------------------------------------------------\n#"
+                            news_items = top_financial_news.split("\n--------------------------------------------------------------------------------\n")
+
+                            # Display each split as a separate st.info()
+                            for news in news_items:
+                                if len(news.strip()) > 50:  # Only display non-empty content
+                                    st.info(news.strip())  # Display the content in an info box
+
+                        # Add a line between columns using st.markdown and custom CSS
+                        st.markdown("""
+                            <style>
+                                div[data-testid="stHorizontalBlock"] > div {
+                                    border-right: 2px solid #ccc;
+                                    border-left: 2px solid #ccc;
+                                }
+                            </style>
+                        """, unsafe_allow_html=True)
+
+                        # Column 2 (General News)
+                        with column2:
+                            st.markdown("### NVIDIA GENERAL NEWS")
+                            latest_general_news = markdown_content.split("LATEST NVIDIA GENERAL NEWS")[1]
+                            #st.markdown(latest_general_news)
+                            news_items = latest_general_news.split("\n--------------------------------------------------------------------------------\n")
+
+                            # Display each split as a separate st.info()
+                            for news in news_items:
+                                if len(news.strip()) > 0:  # Only display non-empty content
+                                    st.info(news.strip())  # Display the content in an info box
+
+                    else:
+                        st.write("No articles found for the given query.")
+                        
+                except requests.exceptions.RequestException as e:
+                    st.error(f"An error occurred while fetching news: {e}")
+
                 
         
     

@@ -72,7 +72,7 @@ def plot_graph(df, column_name, folder_name):
 
     # Save the plot as a PNG file
     plt.tight_layout()  # Adjust layout to avoid clipping
-    plt.savefig(f'{column_name}_plot.png', format='png')
+    #plt.savefig(f'{column_name}_plot.png', format='png')
 
     # Save the plot to a BytesIO object
     image_buffer = io.BytesIO()
@@ -123,18 +123,18 @@ def snowflake_agent_call(year_quarter_dict, query):
     return image_urls
 
 
-year_quarter_dict = {
-    "2024": ["1", "2"],
-    "2023": ["2"]
-}
+# year_quarter_dict = {
+#     "2024": ["1", "2"],
+#     "2023": ["2"]
+# }
 
-query = "What is the 10-day moving average and 30-day moving average?"
-queries = """
-What is the opening price and closing price?
-What is the 10-day moving average and 30-day moving average?
-What is the daily change and daily change percentage?
-What is the highest and lowest stock price recorded?
+# query = "What is the 10-day moving average and 30-day moving average?"
+# queries = """
+# What is the opening price and closing price?
+# What is the 10-day moving average and 30-day moving average?
+# What is the daily change and daily change percentage?
+# What is the highest and lowest stock price recorded?
 
-"""
+# """
 
-snowflake_agent_call(year_quarter_dict, query)
+# snowflake_agent_call(year_quarter_dict, query)
