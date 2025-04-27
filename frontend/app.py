@@ -118,6 +118,8 @@ def display_main_content(user_selection):
             st.write("##### ⚠️ Please select at least one quarter before submitting.")
         elif not prompt:
             st.write("##### ⚠️ Please enter a prompt before submitting.")
+        elif sum(len(quarters_dict.get(year, [])) for year in years) > 5:
+            st.write("##### ⚠️ Please select no more than 5 quarters.")
         else:
             print("Years ",years)
             print(action)

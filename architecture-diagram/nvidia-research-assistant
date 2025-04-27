@@ -1,0 +1,71 @@
+digraph "nvidia-research-assistant" {
+	graph [bgcolor=white fontcolor="#2D3436" fontname="Sans-Serif" fontsize=24 label="nvidia-research-assistant" nodesep=0.60 pad=2.0 rankdir=TB ranksep=0.75 splines=ortho]
+	node [fixedsize=true fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13 height=1.4 imagescale=true labelloc=b shape=box style=rounded width=1.4]
+	edge [color="#7B8894"]
+	"96bdc076478d4fcdbd8fdebee8022bf3" [label="End User" height=1.9 image="/Users/janvichitroda/Documents/Janvi/NEU/Big_Data_Intelligence_Analytics/Assignment 5/Part 1/Github_Repo/Agentic_Research_Assistant/myenv/lib/python3.12/site-packages/resources/onprem/client/users.png" shape=none]
+	subgraph "cluster_PDF Cloud Storage" {
+		graph [bgcolor="#E5F5FD" fontname="Sans-Serif" fontsize=12 label="PDF Cloud Storage" labeljust=l pencolor="#AEB6BE" rankdir=LR shape=box style=rounded]
+		fc31a93844b243b2a1cd86d521d0ae3e [label="Store NVidia PDFs and Dynamic Visuals" height=1.9 image="input_icons/s3_image.png" shape=none]
+	}
+	subgraph "cluster_Frontend (User Interface)" {
+		graph [bgcolor="#E5F5FD" fontname="Sans-Serif" fontsize=12 label="Frontend (User Interface)" labeljust=l pencolor="#AEB6BE" rankdir=LR shape=box style=rounded]
+		a099969cba1d46378ee2c794fc9d807a [label="Streamlit UI" height=1.9 image="input_icons/streamlit.png" shape=none]
+	}
+	subgraph "cluster_GCP VM Instance" {
+		graph [bgcolor="#E5F5FD" fontname="Sans-Serif" fontsize=12 label="GCP VM Instance" labeljust=l pencolor="#AEB6BE" rankdir=LR shape=box style=rounded]
+		"52b8136b6575461ba8dbf7a341a016f1" [label="GCP VM Instance" height=1.9 image="input_icons/gcp.png" shape=none]
+		subgraph cluster_Backend {
+			graph [bgcolor="#EBF3E7" fontname="Sans-Serif" fontsize=12 label=Backend labeljust=l pencolor="#AEB6BE" rankdir=LR shape=box style=rounded]
+			fd9165f9f3634706a8e82b5b3362db48 [label=FastAPI height=1.9 image="input_icons/FastAPI.png" shape=none]
+		}
+		subgraph "cluster_Processing Agents" {
+			graph [bgcolor="#EBF3E7" fontname="Sans-Serif" fontsize=12 label="Processing Agents" labeljust=l pencolor="#AEB6BE" rankdir=LR shape=box style=rounded]
+			"5232bef7d3724bf9a02a375d0ef1bf58" [label="Summary Agent" height=1.9 image="input_icons/pinecone.png" shape=none]
+			cede34bc9ffb47b384ce7fb29bb92616 [label="Visual Agent" height=1.9 image="input_icons/snowflake.png" shape=none]
+			"1bce3361122d4323aa549322f4d34bf7" [label="Web Search Agent" height=1.9 image="input_icons/serpapi.png" shape=none]
+			subgraph cluster_langraph {
+				graph [bgcolor="#ECE8F6" fontname="Sans-Serif" fontsize=12 label=langraph labeljust=l pencolor="#AEB6BE" rankdir=LR shape=box style=rounded]
+				subgraph "cluster_Consolidated Report Agent" {
+					graph [bgcolor="#FDF7E3" fontname="Sans-Serif" fontsize=12 label="Consolidated Report Agent" labeljust=l pencolor="#AEB6BE" rankdir=LR shape=box style=rounded]
+					"2904726cedf949a6a2020f5ac107b02a" [label="Langraph Agent" height=1.9 image="input_icons/langgraph.png" shape=none]
+				}
+			}
+			subgraph "cluster_LLM Integration" {
+				graph [bgcolor="#ECE8F6" fontname="Sans-Serif" fontsize=12 label="LLM Integration" labeljust=l pencolor="#AEB6BE" rankdir=LR shape=box style=rounded]
+				"88f4bf357d06459d8f2d28cd88f09812" [label="LLM Integration" height=1.9 image="input_icons/llm.png" shape=none]
+				f5996d38c5f24da38ecc0e883f5c6089 [label="Gemini 
+ (Google)" height=2.3 image="input_icons/gemini.png" shape=none]
+			}
+		}
+	}
+	"96bdc076478d4fcdbd8fdebee8022bf3" -> a099969cba1d46378ee2c794fc9d807a [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	a099969cba1d46378ee2c794fc9d807a -> "96bdc076478d4fcdbd8fdebee8022bf3" [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	a099969cba1d46378ee2c794fc9d807a -> fc31a93844b243b2a1cd86d521d0ae3e [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	a099969cba1d46378ee2c794fc9d807a -> "52b8136b6575461ba8dbf7a341a016f1" [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	"52b8136b6575461ba8dbf7a341a016f1" -> fd9165f9f3634706a8e82b5b3362db48 [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	fd9165f9f3634706a8e82b5b3362db48 -> "5232bef7d3724bf9a02a375d0ef1bf58" [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	a099969cba1d46378ee2c794fc9d807a -> "52b8136b6575461ba8dbf7a341a016f1" [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	"52b8136b6575461ba8dbf7a341a016f1" -> fd9165f9f3634706a8e82b5b3362db48 [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	fd9165f9f3634706a8e82b5b3362db48 -> cede34bc9ffb47b384ce7fb29bb92616 [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	a099969cba1d46378ee2c794fc9d807a -> "52b8136b6575461ba8dbf7a341a016f1" [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	"52b8136b6575461ba8dbf7a341a016f1" -> fd9165f9f3634706a8e82b5b3362db48 [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	fd9165f9f3634706a8e82b5b3362db48 -> "1bce3361122d4323aa549322f4d34bf7" [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	a099969cba1d46378ee2c794fc9d807a -> "52b8136b6575461ba8dbf7a341a016f1" [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	"52b8136b6575461ba8dbf7a341a016f1" -> fd9165f9f3634706a8e82b5b3362db48 [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	fd9165f9f3634706a8e82b5b3362db48 -> "2904726cedf949a6a2020f5ac107b02a" [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	"5232bef7d3724bf9a02a375d0ef1bf58" -> fd9165f9f3634706a8e82b5b3362db48 [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	cede34bc9ffb47b384ce7fb29bb92616 -> fd9165f9f3634706a8e82b5b3362db48 [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	"1bce3361122d4323aa549322f4d34bf7" -> fd9165f9f3634706a8e82b5b3362db48 [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	"2904726cedf949a6a2020f5ac107b02a" -> fd9165f9f3634706a8e82b5b3362db48 [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	"5232bef7d3724bf9a02a375d0ef1bf58" -> "2904726cedf949a6a2020f5ac107b02a" [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	cede34bc9ffb47b384ce7fb29bb92616 -> "2904726cedf949a6a2020f5ac107b02a" [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	"1bce3361122d4323aa549322f4d34bf7" -> "2904726cedf949a6a2020f5ac107b02a" [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	"5232bef7d3724bf9a02a375d0ef1bf58" -> "88f4bf357d06459d8f2d28cd88f09812" [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	cede34bc9ffb47b384ce7fb29bb92616 -> "88f4bf357d06459d8f2d28cd88f09812" [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	"1bce3361122d4323aa549322f4d34bf7" -> "88f4bf357d06459d8f2d28cd88f09812" [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	"2904726cedf949a6a2020f5ac107b02a" -> "88f4bf357d06459d8f2d28cd88f09812" [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	"88f4bf357d06459d8f2d28cd88f09812" -> f5996d38c5f24da38ecc0e883f5c6089 [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	fc31a93844b243b2a1cd86d521d0ae3e -> a099969cba1d46378ee2c794fc9d807a [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	"52b8136b6575461ba8dbf7a341a016f1" -> a099969cba1d46378ee2c794fc9d807a [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	fd9165f9f3634706a8e82b5b3362db48 -> "52b8136b6575461ba8dbf7a341a016f1" [dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+}
