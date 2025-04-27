@@ -152,6 +152,7 @@ The Streamlit app should open automatically in your browser at `http://localhost
 - Google Gemini for LLM capabilities
 - All third-party libraries and services used in this project
 - AI assistance from language models (including Claude, Chatgpt, Gemini) which helped with code generation, debugging, and documentation
+- Concepts and techniques from the Big Data Intelligence Analytics course assignment that informed the design and implementation of this project
 
 ## Contact
 
